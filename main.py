@@ -41,21 +41,38 @@ class FormContainer(UserControl):
 # CRUD Clases
 class CreateTask(UserControl):
     
-    def __init__(self, task:str, date:str):
+    def __init__(self, task:str, date:str, delete, edit):
         self.task = task
         self.date = date
+        self.delete_task = delete
+        self.edit_task = edit
         super().__init__()
     
-    def TaskDeleteEdit(self, name, color):
+    def TaskDeleteEdit(self, name, color, func):
         return IconButton(
             icon=name, width=30, height=18, icon_color=color, opacity=0, animate_opacity=200,
-            on_click=None
+            on_click=lambda e: func(self.GetContainerInstance())
         )
     
+    # to get the instance(task) in-order to edit or delete it
+    def GetContainerInstance(self):
+        return self
+
+    def ShowIcons(self, e):
+        if e.data =='true':
+            (e.control.content.controls[1].controls[0].opacity,
+             e.control.content.controls[1].controls[1].opacity) = (1,1)
+            e.control.content.update()
+        else:
+            (e.control.content.controls[1].controls[0].opacity,
+             e.control.content.controls[1].controls[1].opacity) = (0,0)
+            e.control.content.update()
+    
+
     def build(self):
         return Container(
-            width=280, height=60, border=border.all(0.85, "white45"),
-            border_radius=8, on_hover=None, #change later
+            width=280, height=60, border=border.all(0.85, "white54"),
+            border_radius=8, on_hover=lambda e: self.ShowIcons(e), 
             clip_behavior=ClipBehavior.HARD_EDGE, padding=10, 
             content=Row(
                 alignment=MainAxisAlignment.SPACE_BETWEEN,
@@ -71,8 +88,8 @@ class CreateTask(UserControl):
                     Row(
                         spacing=0, alignment=MainAxisAlignment.CENTER,
                         controls=[
-                            self.TaskDeleteEdit(icons.DELETE_ROUNDED, "red500"),
-                            self.TaskDeleteEdit(icons.EDIT_ROUNDED, "white70"),
+                            self.TaskDeleteEdit(icons.DELETE_ROUNDED, "red500", self.delete_task),
+                            self.TaskDeleteEdit(icons.EDIT_ROUNDED, "white70", self.edit_task),
                         ]
                     )
                 ]
@@ -85,6 +102,26 @@ def main(page: Page):
     
     # Add new created task to screen
     def AddTaskToScreen(e):
+        dateTime = datetime.now().strftime("%b %d, %Y %I:%M")
+        if form.content.controls[0].value: # checks the textfield value
+            _main_column_.controls.append(
+                # creating instance of the CreateTask() class
+                CreateTask(
+                form.content.controls[0].value,
+                dateTime,
+                DeleteTask,
+                EditTask
+                )
+            )
+            _main_column_.update()
+            # recalling the show hide function here
+            CreateToDoTask(e)
+
+    def DeleteTask(e):
+        _main_column_.controls.remove(e)
+        _main_column_.update()
+
+    def EditTask(e):
         pass
 
     # to hide and show form container
